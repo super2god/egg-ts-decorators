@@ -9,13 +9,25 @@ const StatusError = require('./src/exception/status-error');
 const ControllerHandler = require('./src/handler/controller-handler');
 const MethodHandler = require('./src/handler/method-handler');
 
+const pathMap = new Map();
 const ctMap = new Map();
 const ctHandler = new ControllerHandler();
 const methodHandler = new MethodHandler(ctMap);
 const swaggerHttpMethod = [ 'get', 'post', 'put', 'delete', 'patch' ];
 
+/**
+ * 根据request中的path，得到对应的controller处理方法
+ * @param {string} path - 请求路径
+ * @param {string} method - 请求方法
+ * @returns {Array} 含target(ControllerX.prototype)和property两项的数组。 如果没有找到对应的数据，则为[null,null], 保持Array类型以便解构
+ */
+const getRouterTarget = (path,method) => {
+  return pathMap.get(`${method.toLowerCase()}@${path}`) || [null,null];
+};
+
 const EggShell = (app, options = {}) => {
   const { router, jwt } = app;
+
   // 设置全局路由前缀
   if (options.prefix) router.prefix(options.prefix);
   options.before = options.before || [];
@@ -201,6 +213,9 @@ const EggShell = (app, options = {}) => {
       };
 
       router[reqMethod](prefix + path, routerCb);
+
+      // 存入(method+pathm) 与 [target,property]的映射, 便于在中间件中根据path获取target上metaData，做出对应处理
+      pathMap.set(`${reqMethod}@${prefix+path}`, [c.constructor, pName]);
     }
   }
 
@@ -211,6 +226,7 @@ const EggShell = (app, options = {}) => {
       fs.writeFileSync(outPath, JSON.stringify(swaggerJson), { encoding: 'utf8' });
     }
   }
+
 };
 
 const paramsRegex = /:[\w-]*/g;
@@ -239,6 +255,7 @@ function getDefinition (definitions, definitionPath) {
 
 module.exports = {
   EggShell,
+  getRouterTarget,
   StatusError,
 
   Get: methodHandler.get(),

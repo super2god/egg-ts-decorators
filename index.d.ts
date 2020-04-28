@@ -2,7 +2,11 @@ interface EggShell {
   (app: object, options: object): void
 }
 
-declare class StatusError {
+interface GetRouterTarget{
+  (path: string, method: string): [Function,string] | [null,null]
+}
+
+export declare class StatusError {
   constructor(message: string, status?: number);
 
   message: string;
@@ -34,8 +38,7 @@ interface CoupleDecorator {
 }
 
 export const EggShell: EggShell
-export const StatusError: StatusError
-
+export const getRouterTarget: GetRouterTarget
 export const Get: SingleDecorator
 export const Post: SingleDecorator
 export const Put: SingleDecorator
